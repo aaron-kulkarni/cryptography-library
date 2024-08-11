@@ -21,22 +21,19 @@ pub fn encrypt(key_length: u16) {
 
     if rounds == 0 {
         //throw error, panic, whatever.
-        return;
     }
 }
 
-fn encryption_round(_state: [[char; 16]; 16]) {
+fn encryption_round(_state: [[u8; 16]; 16]) {
     // sub_bytes();
     // shift_row_left();
     // mix_column();
     // add_round_key();
-
-    return;
 }
 
 pub fn decrypt() {}
 
-fn add_round_key(state: &mut [char; 16], round_key: &[char; 16]) {
+fn add_round_key(state: &mut [u8; 16], round_key: &[u8; 16]) {
     //in-place edit of state.
     // for (i, row) in state.iter_mut().enumerate() {
     //     for (y, col) in row.iter_mut().enumerate() {
@@ -45,32 +42,29 @@ fn add_round_key(state: &mut [char; 16], round_key: &[char; 16]) {
     // }
 
     for (i, val) in state.iter_mut().enumerate() {
-        *val = utils::xor_chars(*val, round_key[i]);
+        *val ^= round_key[i];
     }
 }
 
-fn shift_rows(state: &mut [char; 16], left: bool) {
-    let mut cur_row = 1;
-    if left == true {
-        loop {
-            if cur_row == 4 {
-                break;
-            }
+fn sub_bytes(state: &mut [u8; 16]) {
+    for val in state.iter_mut() {
+        *val = utils::get_sbox_val(*val);
+    }
+}
+
+fn shift_rows(state: &mut [u8; 16], left: bool) {
+    if left {
+        for cur_row in 1..4 {
             shift_row_left(state, cur_row);
-            cur_row += 1;
         }
     } else {
-        loop {
-            if cur_row == 4 {
-                break;
-            }
-            // shift_row_right(state, curRow);
-            cur_row += 1;
+        for cur_row in 1..4 {
+            //shift_row_right(state, cur_row);
         }
     }
 }
 
-fn shift_row_left(state: &mut [char; 16], row: u8) {
+fn shift_row_left(state: &mut [u8; 16], row: u8) {
     if row == 1 {
         return;
     }
@@ -80,11 +74,52 @@ fn shift_row_left(state: &mut [char; 16], row: u8) {
         if shifts == 3 {
             break;
         }
-        let temp: char = state[start];
+        let temp: u8 = state[start];
         for j in 0..3 {
             state[j] = state[j + 1];
         }
         state[3] = temp;
         shifts += 1;
     }
+}
+
+fn mix_columns(state: &mut [u8; 16]) {
+    let mut col: [u8; 4] = [0; 4];
+
+    for i in 0..4 {
+        for j in 0..4 {
+            col[j] = state[(j * 4) + i];
+        }
+        mix_col(&mut col);
+        for k in 0..4 {
+            state[(k * 4) + i] = col[k];
+        }
+    }
+}
+
+fn mix_col(col: &mut [u8; 4]) {
+    let copy: [u8; 4] = col.clone();
+    col[0] = glsmult(copy[0], 2) ^ glsmult(copy[3], 1) ^ glsmult(copy[2], 1) ^ glsmult(copy[1], 3);
+    col[1] = glsmult(copy[1], 2) ^ glsmult(copy[0], 1) ^ glsmult(copy[3], 1) ^ glsmult(copy[2], 3);
+    col[2] = glsmult(copy[2], 2) ^ glsmult(copy[1], 1) ^ glsmult(copy[0], 1) ^ glsmult(copy[3], 3);
+    col[3] = glsmult(copy[3], 2) ^ glsmult(copy[2], 1) ^ glsmult(copy[1], 1) ^ glsmult(copy[0], 3);
+}
+
+fn glsmult(mut a: u8, mut b: u8) -> u8 {
+    //Galois multiplication
+    let mut p = 0;
+    let mut hi_bit;
+
+    for _ in 0..8 {
+        if b & 1 == 1 {
+            p ^= a;
+        }
+        hi_bit = (a & 0x80);
+        a <<= 1;
+        if hi_bit == 0x80 {
+            a ^= 0x1b;
+        }
+        b >>= 1;
+    }
+    return p;
 }

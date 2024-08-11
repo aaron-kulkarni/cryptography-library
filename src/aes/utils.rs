@@ -1,4 +1,4 @@
-const S_BOX: [[u8; 16]; 16] = [
+pub const S_BOX: [[u8; 16]; 16] = [
     [
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab,
         0x76,
@@ -64,6 +64,12 @@ const S_BOX: [[u8; 16]; 16] = [
         0x16,
     ],
 ];
+
+pub fn get_sbox_val(val: u8) -> u8 {
+    let row: usize = (val as usize) / 16;
+    let col: usize = (val as usize) % 16;
+    return S_BOX[row][col] as u8;
+}
 
 pub fn xor_chars(c1: char, c2: char) -> char {
     //In Rust, characters cannot be directly xored
