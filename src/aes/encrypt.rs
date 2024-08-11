@@ -1,6 +1,7 @@
 use super::utils;
+use super::utils::KeyLength;
 
-pub fn encrypt(key_length: u16) {
+pub fn encrypt(key_length: KeyLength) {
     //for every block of the plaintext input
     // key generation: generate a set of round keys from a secret key
     //addition of first round key to input
@@ -13,34 +14,34 @@ pub fn encrypt(key_length: u16) {
     // key_expansion();
     // add_round_key();
     let rounds: u8 = match key_length {
-        128 => 10,
-        192 => 12,
-        256 => 14,
-        _ => 0,
+        KeyLength::Bits128 => 10,
+        KeyLength::Bits192 => 12,
+        KeyLength::Bits256 => 14,
     };
-
-    if rounds == 0 {
-        //throw error, panic, whatever.
-    }
 }
 
-fn encryption_round(_state: [[u8; 16]; 16]) {
-    // sub_bytes();
-    // shift_row_left();
-    // mix_column();
+fn encryption_round(state: &mut [u8; 16]) {
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
     // add_round_key();
 }
 
-pub fn decrypt() {}
+fn final_encryption_round(state: &mut [u8; 16]) {
+    sub_bytes(state);
+    shift_rows(state);
+    //add_round_key();
+}
+
+fn create_round_key(expanded_key: &[u8; N], round_key: &mut [u8; N]) {
+    for i in 0..4 {
+        for j in 0..4 {
+            round_key[(i + (j * 4))] = expandedKey[(i * 4) + j];
+        }
+    }
+}
 
 fn add_round_key(state: &mut [u8; 16], round_key: &[u8; 16]) {
-    //in-place edit of state.
-    // for (i, row) in state.iter_mut().enumerate() {
-    //     for (y, col) in row.iter_mut().enumerate() {
-    //         col = col ^ round_key[i][y];
-    //     }
-    // }
-
     for (i, val) in state.iter_mut().enumerate() {
         *val ^= round_key[i];
     }
@@ -52,15 +53,10 @@ fn sub_bytes(state: &mut [u8; 16]) {
     }
 }
 
-fn shift_rows(state: &mut [u8; 16], left: bool) {
-    if left {
-        for cur_row in 1..4 {
-            shift_row_left(state, cur_row);
-        }
-    } else {
-        for cur_row in 1..4 {
-            //shift_row_right(state, cur_row);
-        }
+fn shift_rows(state: &mut [u8; 16]) {
+    //this is for encryption operation
+    for cur_row in 1..4 {
+        shift_row_left(state, cur_row);
     }
 }
 
@@ -69,17 +65,12 @@ fn shift_row_left(state: &mut [u8; 16], row: u8) {
         return;
     }
     let start = ((row - 1) * 4) as usize;
-    let mut shifts = 0;
-    loop {
-        if shifts == 3 {
-            break;
-        }
+    for _ in 0..3 {
         let temp: u8 = state[start];
         for j in 0..3 {
             state[j] = state[j + 1];
         }
-        state[3] = temp;
-        shifts += 1;
+        state[start + 3] = temp;
     }
 }
 
@@ -122,4 +113,34 @@ fn glsmult(mut a: u8, mut b: u8) -> u8 {
         b >>= 1;
     }
     return p;
+}
+
+fn rotate(word: &mut [u8; 4]) {
+    let temp: u8 = word[0];
+    for j in 0..3 {
+        word[j] = word[j + 1];
+    }
+    word[3] = temp;
+}
+
+fn key_core(word: &mut [u8; 4], iteration: usize) {
+    rotate(word);
+    for i in 0..4 {
+        word[i] = utils::get_sbox_val(word[i]);
+    }
+    word[0] = word[0] ^ utils::get_rcon_val(word[iteration])
+}
+
+/////////////////////////// KEY EXPANSION //////////////////////////////
+
+fn expand_key<const N: usize>(base_key: &[u8; N], expanded_key: &[u8; N])
+where
+    [(); N]: Sized,
+{
+    let mut cur_size: i32 = 0;
+    let rcon_iter: i32 = 1;
+    let i: i32 = 0;
+    let mut temp: [u8; 4] = [0; 4];
+
+    while cur_size < N {}
 }
