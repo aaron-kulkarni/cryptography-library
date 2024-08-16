@@ -1,7 +1,7 @@
 use super::utils;
 use super::utils::KeyLength;
 
-pub fn encrypt(key_length: KeyLength) {
+pub fn encrypt(key_length: KeyLength, input: [u8; 16]) -> [u8; 16] {
     //for every block of the plaintext input
     // key generation: generate a set of round keys from a secret key
     //addition of first round key to input
@@ -13,11 +13,16 @@ pub fn encrypt(key_length: KeyLength) {
     //final round: skip mix columns step
     // key_expansion();
     // add_round_key();
+
     let rounds: u8 = match key_length {
         KeyLength::Bits128 => 10,
         KeyLength::Bits192 => 12,
         KeyLength::Bits256 => 14,
     };
+
+    let expanded_key_size = (16 * (rounds + 1));
+
+    let base_key = expand_key();
 }
 
 fn encryption_round(state: &mut [u8; 16]) {
@@ -36,7 +41,7 @@ fn final_encryption_round(state: &mut [u8; 16]) {
 fn create_round_key(expanded_key: &[u8; N], round_key: &mut [u8; N]) {
     for i in 0..4 {
         for j in 0..4 {
-            round_key[(i + (j * 4))] = expandedKey[(i * 4) + j];
+            round_key[(i + (j * 4))] = expanded_key[(i * 4) + j];
         }
     }
 }
@@ -133,14 +138,42 @@ fn key_core(word: &mut [u8; 4], iteration: usize) {
 
 /////////////////////////// KEY EXPANSION //////////////////////////////
 
-fn expand_key<const N: usize>(base_key: &[u8; N], expanded_key: &[u8; N])
+fn expand_key<const N: usize, const M: usize>(base_key: &[u8; N]) -> [u8; M]
 where
     [(); N]: Sized,
 {
-    let mut cur_size: i32 = 0;
-    let rcon_iter: i32 = 1;
-    let i: i32 = 0;
+    let mut cur_size: usize = 0;
+    let mut rcon_iter: usize = 1;
     let mut temp: [u8; 4] = [0; 4];
+    let mut expanded_key: [u8; M] = [0; M];
 
-    while cur_size < N {}
+    //copy over base key into expanded
+    for i in 0..N {
+        expanded_key[i] = base_key[i];
+    }
+    cur_size += N;
+
+    while cur_size < M {
+        for k in 0..4 {
+            temp[k] = expanded_key[(cur_size - 4) + k];
+        }
+    }
+
+    if cur_size % N == 0 {
+        rcon_iter += 1;
+        key_core(&mut temp, rcon_iter);
+    }
+
+    if N == 32 && cur_size % N == 16 {
+        for m in 0..4 {
+            temp[m] = utils::get_sbox_val(temp[m]);
+        }
+    }
+
+    for a in 0..4 {
+        expanded_key[cur_size] = expanded_key[cur_size - N] ^ temp[a];
+        cur_size += 1;
+    }
+
+    return expanded_key;
 }

@@ -237,3 +237,46 @@ pub fn xor_chars(c1: char, c2: char) -> char {
     // Convert the result back to a char
     std::char::from_u32(xor_result).unwrap_or('\u{FFFD}') // '\u{FFFD}' is the replacement character
 }
+
+pub struct Config {
+    pub base_string: String,
+    pub key_length: KeyLength,
+}
+
+impl Config {
+    pub fn build(mut args: std::env::Args) -> Result<Config, &'static str> {
+        if args.len() < 3 {
+            return Err("Must have at least 2 arguments. First should be the string you want to encrypt and the second should be key length.");
+        }
+
+        args.next(); //skip the program name arg
+
+        let base_string = match args.next() {
+            Some(arg) => match arg.len() {
+                16 => arg,
+                _ => return Err("Length of string to encrypt must be exactly 16 bytes."),
+            },
+            None => return Err("Didn't get a string to encrypt."),
+        };
+
+        let key_length_param = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a key length."),
+        };
+
+        let key_length = match key_length_param.parse::<u16>() {
+            Ok(val) => match val {
+                16 => KeyLength::Bits128,
+                24 => KeyLength::Bits192,
+                32 => KeyLength::Bits256,
+                _ => return Err("Key length must either be 16, 24, or 32."),
+            },
+            Err(_) => return Err("Key length was not a valid integer."),
+        };
+
+        Ok(Config {
+            base_string,
+            key_length,
+        })
+    }
+}
