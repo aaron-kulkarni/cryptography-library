@@ -8,14 +8,12 @@ fn main() {
         process::exit(1);
     });
 
-    let bytes = config.base_string.as_bytes();
+    let string_bytes: [u8; 16] = conv_string_to_bytes(&config.base_string);
+    aes::encrypt::encrypt(config.key_length, string_bytes);
+}
 
-    if bytes.len() == 16 {
-        let string_bytes: [u8; 16] = bytes.try_into().expect("something");
-
-        aes::encrypt::encrypt(config.key_length, string_bytes);
-    } else {
-        eprintln!("Length of string in bytes must be 16.");
-        process::exit(2);
-    }
+fn conv_string_to_bytes(given: &str) -> [u8; 16] {
+    let bytes = given.as_bytes();
+    let string_bytes: [u8; 16] = bytes.try_into().expect("something");
+    return string_bytes;
 }

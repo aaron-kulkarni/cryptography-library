@@ -2,48 +2,54 @@ use super::utils;
 use super::utils::KeyLength;
 
 pub fn encrypt(key_length: KeyLength, input: [u8; 16]) -> [u8; 16] {
-    //for every block of the plaintext input
-    // key generation: generate a set of round keys from a secret key
-    //addition of first round key to input
-    //series of rounds, defined by length of secret key
-    //1. subsitute bytes
-    //2. shift rows
-    //3. mix columns
-    //4. adding round key
-    //final round: skip mix columns step
-    // key_expansion();
-    // add_round_key();
-
     let rounds: u8 = match key_length {
         KeyLength::Bits128 => 10,
         KeyLength::Bits192 => 12,
         KeyLength::Bits256 => 14,
     };
 
-    let expanded_key_size = (16 * (rounds + 1));
-
-    let base_key = expand_key();
+    let expanded_key_size = 16 * (rounds + 1);
+    let expanded_key = expand_key(&input);
+    encrypt_main(input, expanded_key, rounds);
 }
 
-fn encryption_round(state: &mut [u8; 16]) {
+fn encrypt_main(mut state: [u8; 16], expanded_key: [u8; N], rounds: u8) {
+    let round_key = create_round_key(expanded_key[0..16]);
+
+    for i in 1..rounds + 1 {
+        let round_key = create_round_key(expanded_key[16 * i..(16 * i) + 1]);
+        if i != rounds {
+            encryption_round(&mut state, &mut round_key);
+        } else {
+            final_encryption_round(&mut state, &mut round_key);
+        }
+    }
+}
+
+fn encryption_round(state: &mut [u8; 16], round_key: &mut [u8; 16]) {
     sub_bytes(state);
     shift_rows(state);
     mix_columns(state);
-    // add_round_key();
+    add_round_key(state, round_key);
 }
 
-fn final_encryption_round(state: &mut [u8; 16]) {
+fn final_encryption_round(state: &mut [u8; 16], round_key: &mut [u8; 16]) {
     sub_bytes(state);
     shift_rows(state);
-    //add_round_key();
+    add_round_key(state, round_key);
 }
 
-fn create_round_key(expanded_key: &[u8; N], round_key: &mut [u8; N]) {
+fn create_round_key<const N: usize>(expanded_key: &[u8; N]) -> [u8; 16]
+where
+    [(); N]: Sized,
+{
+    let mut round_key: [u8; 16] = [0; 16];
     for i in 0..4 {
         for j in 0..4 {
-            round_key[(i + (j * 4))] = expanded_key[(i * 4) + j];
+            round_key[i + (j * 4)] = expanded_key[(i * 4) + j];
         }
     }
+    return round_key;
 }
 
 fn add_round_key(state: &mut [u8; 16], round_key: &[u8; 16]) {
