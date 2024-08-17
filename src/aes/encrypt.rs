@@ -1,7 +1,8 @@
+use super::utils::glsmult;
 use super::utils::KeyLength;
 use super::utils::{self};
-
-pub fn encrypt(key_length: KeyLength, input: String) -> String {
+use std::process;
+pub fn encrypt(key_length: KeyLength, input: String) -> Vec<u8> {
     let input_vec: Vec<u8> = input.as_bytes().to_vec();
 
     let rounds: u8 = match key_length {
@@ -10,9 +11,14 @@ pub fn encrypt(key_length: KeyLength, input: String) -> String {
         KeyLength::Len32 => 14,
     };
 
-    let expanded_key: Vec<u8> = expand_key(&input_vec);
-    let temp_result = encrypt_main(input_vec, rounds, &expanded_key);
-    return String::from_utf8(temp_result).expect("Some other error message");
+    //TODO: replace this with a randomly generated key
+    let char_key: Vec<char> = vec![
+        'k', 'k', 'k', 'k', 'e', 'e', 'e', 'e', 'y', 'y', 'y', 'y', '.', '.', '.', '.',
+    ];
+    let byte_key: Vec<u8> = char_key.iter().map(|c| *c as u8).collect::<Vec<_>>();
+
+    let expanded_key: Vec<u8> = expand_key(&byte_key);
+    return encrypt_main(input_vec, rounds, &expanded_key);
 }
 
 fn encrypt_main(mut state: Vec<u8>, rounds: u8, expanded_key: &Vec<u8>) -> Vec<u8> {
@@ -33,6 +39,7 @@ fn encrypt_main(mut state: Vec<u8>, rounds: u8, expanded_key: &Vec<u8>) -> Vec<u
 }
 
 fn encryption_round(state: &mut Vec<u8>, round_key: &Vec<u8>) {
+    println!("The size of state right now: {}", state.len());
     sub_bytes(state);
     shift_rows(state);
     mix_columns(state);
@@ -43,10 +50,12 @@ fn final_encryption_round(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     sub_bytes(state);
     shift_rows(state);
     add_round_key(state, round_key);
+    println!("After final round, state is length {}", state.len());
 }
 
 fn create_round_key(expanded_key: &[u8]) -> Vec<u8> {
     let mut round_key: Vec<u8> = Vec::new();
+    round_key.resize(16, 0);
     for i in 0..4 {
         for j in 0..4 {
             round_key[i + (j * 4)] = expanded_key[(i * 4) + j];
@@ -110,25 +119,6 @@ fn mix_col(col: &mut [u8; 4]) {
     col[3] = glsmult(copy[3], 2) ^ glsmult(copy[2], 1) ^ glsmult(copy[1], 1) ^ glsmult(copy[0], 3);
 }
 
-fn glsmult(mut a: u8, mut b: u8) -> u8 {
-    //Galois multiplication
-    let mut p = 0;
-    let mut hi_bit;
-
-    for _ in 0..8 {
-        if b & 1 == 1 {
-            p ^= a;
-        }
-        hi_bit = a & 0x80;
-        a <<= 1;
-        if hi_bit == 0x80 {
-            a ^= 0x1b;
-        }
-        b >>= 1;
-    }
-    return p;
-}
-
 fn rotate(word: &mut [u8; 4]) {
     let temp: u8 = word[0];
     for j in 0..3 {
@@ -142,7 +132,7 @@ fn key_core(word: &mut [u8; 4], iteration: usize) {
     for i in 0..4 {
         word[i] = utils::get_sbox_val(word[i]);
     }
-    word[0] = word[0] ^ utils::get_rcon_val(word[iteration])
+    word[0] = word[0] ^ utils::get_rcon_val(iteration as u8)
 }
 
 fn expand_key(base_key: &Vec<u8>) -> Vec<u8> {
@@ -169,23 +159,21 @@ fn expand_key(base_key: &Vec<u8>) -> Vec<u8> {
         for k in 0..4 {
             temp[k] = expanded_key[(cur_size - 4) + k];
         }
-        //INFINITE LOOP HERE. FIX
-    }
-
-    if cur_size % base_key.len() == 0 {
-        rcon_iter += 1;
-        key_core(&mut temp, rcon_iter);
-    }
-
-    if base_key.len() == 32 && cur_size % base_key.len() == 16 {
-        for m in 0..4 {
-            temp[m] = utils::get_sbox_val(temp[m]);
+        if cur_size % base_key.len() == 0 {
+            key_core(&mut temp, rcon_iter);
+            rcon_iter += 1;
         }
-    }
 
-    for a in 0..4 {
-        expanded_key[cur_size] = expanded_key[cur_size - base_key.len()] ^ temp[a];
-        cur_size += 1;
+        if base_key.len() == 32 && cur_size % base_key.len() == 16 {
+            for m in 0..4 {
+                temp[m] = utils::get_sbox_val(temp[m]);
+            }
+        }
+
+        for a in 0..4 {
+            expanded_key[cur_size] = expanded_key[cur_size - base_key.len()] ^ temp[a];
+            cur_size += 1;
+        }
     }
 
     return expanded_key;

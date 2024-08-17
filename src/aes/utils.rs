@@ -256,6 +256,25 @@ pub fn xor_chars(c1: char, c2: char) -> char {
     std::char::from_u32(xor_result).unwrap_or('\u{FFFD}') // '\u{FFFD}' is the replacement character
 }
 
+pub fn glsmult(mut a: u8, mut b: u8) -> u8 {
+    //Galois multiplication
+    let mut p = 0;
+    let mut hi_bit;
+
+    for _ in 0..8 {
+        if b & 1 == 1 {
+            p ^= a;
+        }
+        hi_bit = a & 0x80;
+        a <<= 1;
+        if hi_bit == 0x80 {
+            a ^= 0x1b;
+        }
+        b >>= 1;
+    }
+    return p;
+}
+
 pub struct Config {
     pub base_string: String,
     pub key_length: KeyLength,
