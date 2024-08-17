@@ -1,5 +1,4 @@
 use std::{env, process};
-
 mod aes;
 
 fn main() {

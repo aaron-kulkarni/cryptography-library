@@ -1,5 +1,5 @@
-use super::utils::{self, ExpandedKey};
-use super::utils::{BaseKey, KeyLength};
+use super::utils::KeyLength;
+use super::utils::{self};
 
 pub fn encrypt(key_length: KeyLength, input: String) -> String {
     let input_vec: Vec<u8> = input.as_bytes().to_vec();
@@ -119,7 +119,7 @@ fn glsmult(mut a: u8, mut b: u8) -> u8 {
         if b & 1 == 1 {
             p ^= a;
         }
-        hi_bit = (a & 0x80);
+        hi_bit = a & 0x80;
         a <<= 1;
         if hi_bit == 0x80 {
             a ^= 0x1b;
@@ -169,6 +169,7 @@ fn expand_key(base_key: &Vec<u8>) -> Vec<u8> {
         for k in 0..4 {
             temp[k] = expanded_key[(cur_size - 4) + k];
         }
+        //INFINITE LOOP HERE. FIX
     }
 
     if cur_size % base_key.len() == 0 {

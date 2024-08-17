@@ -277,6 +277,11 @@ impl Config {
             None => return Err("Didn't get a string to encrypt."),
         };
 
+        // let base_string = match args.next() {
+        //     Some(arg) => arg,
+        //     None => return Err("Didn't get a string to encrypt.")
+        // };
+
         let key_length_param = match args.next() {
             Some(arg) => arg,
             None => return Err("Didn't get a key length."),
