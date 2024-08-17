@@ -218,9 +218,27 @@ pub fn get_rcon_val(val: u8) -> u8 {
 }
 
 pub enum KeyLength {
-    Bits128 = 16,
-    Bits192 = 24,
-    Bits256 = 32,
+    Len16 = 16,
+    Len24 = 24,
+    Len32 = 32,
+}
+
+pub enum ExpandedKeyLength {
+    Len176 = 176,
+    Len208 = 208,
+    Len240 = 240,
+}
+
+pub enum BaseKey {
+    Bits128([u8; 16]),
+    Bits192([u8; 24]),
+    Bits256([u8; 32]),
+}
+
+pub enum ExpandedKey {
+    Bytes176([u8; 176]),
+    Bytes208([u8; 208]),
+    Bytes240([u8; 240]),
 }
 
 pub fn xor_chars(c1: char, c2: char) -> char {
@@ -266,9 +284,9 @@ impl Config {
 
         let key_length = match key_length_param.parse::<u16>() {
             Ok(val) => match val {
-                16 => KeyLength::Bits128,
-                24 => KeyLength::Bits192,
-                32 => KeyLength::Bits256,
+                16 => KeyLength::Len16,
+                24 => KeyLength::Len24,
+                32 => KeyLength::Len32,
                 _ => return Err("Key length must either be 16, 24, or 32."),
             },
             Err(_) => return Err("Key length was not a valid integer."),

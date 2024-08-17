@@ -1,49 +1,52 @@
-use super::utils;
-use super::utils::KeyLength;
+use super::utils::{self, ExpandedKey};
+use super::utils::{BaseKey, KeyLength};
 
-pub fn encrypt(key_length: KeyLength, input: [u8; 16]) -> [u8; 16] {
+pub fn encrypt(key_length: KeyLength, input: String) -> String {
+    let input_vec: Vec<u8> = input.as_bytes().to_vec();
+
     let rounds: u8 = match key_length {
-        KeyLength::Bits128 => 10,
-        KeyLength::Bits192 => 12,
-        KeyLength::Bits256 => 14,
+        KeyLength::Len16 => 10,
+        KeyLength::Len24 => 12,
+        KeyLength::Len32 => 14,
     };
 
-    let expanded_key_size = 16 * (rounds + 1);
-    let expanded_key = expand_key(&input);
-    encrypt_main(input, expanded_key, rounds);
+    let expanded_key: Vec<u8> = expand_key(&input_vec);
+    let temp_result = encrypt_main(input_vec, rounds, &expanded_key);
+    return String::from_utf8(temp_result).expect("Some other error message");
 }
 
-fn encrypt_main(mut state: [u8; 16], expanded_key: [u8; N], rounds: u8) {
-    let round_key = create_round_key(expanded_key[0..16]);
+fn encrypt_main(mut state: Vec<u8>, rounds: u8, expanded_key: &Vec<u8>) -> Vec<u8> {
+    let round_key = create_round_key(&expanded_key[0..16]);
+    add_round_key(&mut state, &round_key);
 
     for i in 1..rounds + 1 {
-        let round_key = create_round_key(expanded_key[16 * i..(16 * i) + 1]);
+        let start_idx: usize = 16 * i as usize;
+        let end_idx: usize = 16 * (i + 1) as usize;
+        let round_key = create_round_key(&expanded_key[start_idx..end_idx]);
         if i != rounds {
-            encryption_round(&mut state, &mut round_key);
+            encryption_round(&mut state, &round_key);
         } else {
-            final_encryption_round(&mut state, &mut round_key);
+            final_encryption_round(&mut state, &round_key);
         }
     }
+    return state;
 }
 
-fn encryption_round(state: &mut [u8; 16], round_key: &mut [u8; 16]) {
+fn encryption_round(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     sub_bytes(state);
     shift_rows(state);
     mix_columns(state);
     add_round_key(state, round_key);
 }
 
-fn final_encryption_round(state: &mut [u8; 16], round_key: &mut [u8; 16]) {
+fn final_encryption_round(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     sub_bytes(state);
     shift_rows(state);
     add_round_key(state, round_key);
 }
 
-fn create_round_key<const N: usize>(expanded_key: &[u8; N]) -> [u8; 16]
-where
-    [(); N]: Sized,
-{
-    let mut round_key: [u8; 16] = [0; 16];
+fn create_round_key(expanded_key: &[u8]) -> Vec<u8> {
+    let mut round_key: Vec<u8> = Vec::new();
     for i in 0..4 {
         for j in 0..4 {
             round_key[i + (j * 4)] = expanded_key[(i * 4) + j];
@@ -52,26 +55,26 @@ where
     return round_key;
 }
 
-fn add_round_key(state: &mut [u8; 16], round_key: &[u8; 16]) {
+fn add_round_key(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     for (i, val) in state.iter_mut().enumerate() {
         *val ^= round_key[i];
     }
 }
 
-fn sub_bytes(state: &mut [u8; 16]) {
+fn sub_bytes(state: &mut Vec<u8>) {
     for val in state.iter_mut() {
         *val = utils::get_sbox_val(*val);
     }
 }
 
-fn shift_rows(state: &mut [u8; 16]) {
+fn shift_rows(state: &mut Vec<u8>) {
     //this is for encryption operation
     for cur_row in 1..4 {
         shift_row_left(state, cur_row);
     }
 }
 
-fn shift_row_left(state: &mut [u8; 16], row: u8) {
+fn shift_row_left(state: &mut Vec<u8>, row: u8) {
     if row == 1 {
         return;
     }
@@ -85,7 +88,7 @@ fn shift_row_left(state: &mut [u8; 16], row: u8) {
     }
 }
 
-fn mix_columns(state: &mut [u8; 16]) {
+fn mix_columns(state: &mut Vec<u8>) {
     let mut col: [u8; 4] = [0; 4];
 
     for i in 0..4 {
@@ -142,42 +145,45 @@ fn key_core(word: &mut [u8; 4], iteration: usize) {
     word[0] = word[0] ^ utils::get_rcon_val(word[iteration])
 }
 
-/////////////////////////// KEY EXPANSION //////////////////////////////
-
-fn expand_key<const N: usize, const M: usize>(base_key: &[u8; N]) -> [u8; M]
-where
-    [(); N]: Sized,
-{
+fn expand_key(base_key: &Vec<u8>) -> Vec<u8> {
     let mut cur_size: usize = 0;
     let mut rcon_iter: usize = 1;
     let mut temp: [u8; 4] = [0; 4];
-    let mut expanded_key: [u8; M] = [0; M];
+
+    let expanded_key_len: usize = match base_key.len() {
+        16 => 176,
+        24 => 208,
+        32 => 240,
+        _ => panic!("what is going on"),
+    };
+
+    let mut expanded_key = vec![0; expanded_key_len];
 
     //copy over base key into expanded
-    for i in 0..N {
+    for i in 0..base_key.len() {
         expanded_key[i] = base_key[i];
     }
-    cur_size += N;
+    cur_size += base_key.len();
 
-    while cur_size < M {
+    while cur_size < expanded_key_len {
         for k in 0..4 {
             temp[k] = expanded_key[(cur_size - 4) + k];
         }
     }
 
-    if cur_size % N == 0 {
+    if cur_size % base_key.len() == 0 {
         rcon_iter += 1;
         key_core(&mut temp, rcon_iter);
     }
 
-    if N == 32 && cur_size % N == 16 {
+    if base_key.len() == 32 && cur_size % base_key.len() == 16 {
         for m in 0..4 {
             temp[m] = utils::get_sbox_val(temp[m]);
         }
     }
 
     for a in 0..4 {
-        expanded_key[cur_size] = expanded_key[cur_size - N] ^ temp[a];
+        expanded_key[cur_size] = expanded_key[cur_size - base_key.len()] ^ temp[a];
         cur_size += 1;
     }
 
