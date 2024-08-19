@@ -275,6 +275,83 @@ pub fn glsmult(mut a: u8, mut b: u8) -> u8 {
     return p;
 }
 
+fn rotate(word: &mut [u8; 4]) {
+    let temp: u8 = word[0];
+    for j in 0..3 {
+        word[j] = word[j + 1];
+    }
+    word[3] = temp;
+}
+
+fn key_core(word: &mut [u8; 4], iteration: usize) {
+    rotate(word);
+    for i in 0..4 {
+        word[i] = get_sbox_val(word[i]);
+    }
+    word[0] = word[0] ^ get_rcon_val(iteration as u8)
+}
+
+pub fn expand_key(base_key: &Vec<u8>) -> Vec<u8> {
+    let mut cur_size: usize = 0;
+    let mut rcon_iter: usize = 1;
+    let mut temp: [u8; 4] = [0; 4];
+
+    let expanded_key_len: usize = match base_key.len() {
+        16 => 176,
+        24 => 208,
+        32 => 240,
+        _ => panic!("what is going on"),
+    };
+
+    let mut expanded_key = vec![0; expanded_key_len];
+
+    //copy over base key into expanded
+    for i in 0..base_key.len() {
+        expanded_key[i] = base_key[i];
+    }
+    cur_size += base_key.len();
+
+    while cur_size < expanded_key_len {
+        for k in 0..4 {
+            temp[k] = expanded_key[(cur_size - 4) + k];
+        }
+        if cur_size % base_key.len() == 0 {
+            key_core(&mut temp, rcon_iter);
+            rcon_iter += 1;
+        }
+
+        if base_key.len() == 32 && cur_size % base_key.len() == 16 {
+            for m in 0..4 {
+                temp[m] = get_sbox_val(temp[m]);
+            }
+        }
+
+        for a in 0..4 {
+            expanded_key[cur_size] = expanded_key[cur_size - base_key.len()] ^ temp[a];
+            cur_size += 1;
+        }
+    }
+
+    return expanded_key;
+}
+
+pub fn create_round_key(expanded_key: &[u8]) -> Vec<u8> {
+    let mut round_key: Vec<u8> = Vec::new();
+    round_key.resize(16, 0);
+    for i in 0..4 {
+        for j in 0..4 {
+            round_key[i + (j * 4)] = expanded_key[(i * 4) + j];
+        }
+    }
+    return round_key;
+}
+
+pub fn add_round_key(state: &mut Vec<u8>, round_key: &Vec<u8>) {
+    for i in 0..16 {
+        state[i] = state[i] ^ round_key[i];
+    }
+}
+
 pub struct Config {
     pub base_string: String,
     pub key_length: KeyLength,

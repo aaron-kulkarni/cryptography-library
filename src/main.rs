@@ -7,11 +7,15 @@ fn main() {
         process::exit(1);
     });
 
-    let encrypted_string = aes::encrypt::encrypt(config.key_length, config.base_string);
+    let encrypted_bytes = aes::encrypt::encrypt(&config.key_length, config.base_string);
     println!(
-        "This is the encrypted string information: {:?}",
-        encrypted_string
+        "This is the encrypted bytes information: {:?}",
+        encrypted_bytes
     );
+
+    let decrypted_string = aes::decrypt::decrypt(&config.key_length, encrypted_bytes);
+
+    println!("This is the decrypted string: {:?}", decrypted_string);
 }
 
 // fn conv_string_to_bytes(given: &str) -> [u8; 16] {
