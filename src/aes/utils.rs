@@ -1,3 +1,6 @@
+use core::fmt;
+use std::fmt::Result;
+
 const S_BOX: [[u8; 16]; 16] = [
     [
         0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab,
@@ -217,10 +220,35 @@ pub fn get_rcon_val(val: u8) -> u8 {
     return RCON[row][col] as u8;
 }
 
+#[derive(Debug)]
 pub enum KeyLength {
     Len16 = 16,
     Len24 = 24,
     Len32 = 32,
+}
+
+impl fmt::Display for KeyLength {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl KeyLength {
+    pub fn from_u8(value: u8) -> Option<KeyLength> {
+        match value {
+            16 => Some(KeyLength::Len16),
+            24 => Some(KeyLength::Len24),
+            32 => Some(KeyLength::Len32),
+            _ => None, // Handle invalid values
+        }
+    }
+}
+
+pub struct AESConfig {
+    pub base_string: String,
+    pub key_length: KeyLength,
+    pub encrypt: bool,
+    pub key: String,
 }
 
 pub enum ExpandedKeyLength {
@@ -349,53 +377,5 @@ pub fn create_round_key(expanded_key: &[u8]) -> Vec<u8> {
 pub fn add_round_key(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     for i in 0..16 {
         state[i] = state[i] ^ round_key[i];
-    }
-}
-
-pub struct Config {
-    pub base_string: String,
-    pub key_length: KeyLength,
-}
-
-impl Config {
-    pub fn build(mut args: std::env::Args) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Must have at least 2 arguments. First should be the string you want to encrypt and the second should be key length.");
-        }
-
-        args.next(); //skip the program name arg
-
-        let base_string = match args.next() {
-            Some(arg) => match arg.len() {
-                16 => arg,
-                _ => return Err("Length of string to encrypt must be exactly 16 bytes."),
-            },
-            None => return Err("Didn't get a string to encrypt."),
-        };
-
-        // let base_string = match args.next() {
-        //     Some(arg) => arg,
-        //     None => return Err("Didn't get a string to encrypt.")
-        // };
-
-        let key_length_param = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Didn't get a key length."),
-        };
-
-        let key_length = match key_length_param.parse::<u16>() {
-            Ok(val) => match val {
-                16 => KeyLength::Len16,
-                24 => KeyLength::Len24,
-                32 => KeyLength::Len32,
-                _ => return Err("Key length must either be 16, 24, or 32."),
-            },
-            Err(_) => return Err("Key length was not a valid integer."),
-        };
-
-        Ok(Config {
-            base_string,
-            key_length,
-        })
     }
 }

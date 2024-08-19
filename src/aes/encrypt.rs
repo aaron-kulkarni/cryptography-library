@@ -3,7 +3,7 @@ use super::utils::create_round_key;
 use super::utils::glsmult;
 use super::utils::KeyLength;
 use super::utils::{self};
-pub fn encrypt(key_length: &KeyLength, input: String) -> Vec<u8> {
+pub fn encrypt(input: &String, key: &String) -> Vec<u8> {
     let input_vec: Vec<u8> = input.as_bytes().to_vec();
     let mut column_block: Vec<u8> = vec![0; 16];
     for i in 0..4 {
@@ -12,10 +12,11 @@ pub fn encrypt(key_length: &KeyLength, input: String) -> Vec<u8> {
         }
     }
 
-    let rounds: u8 = match key_length {
-        KeyLength::Len16 => 10,
-        KeyLength::Len24 => 12,
-        KeyLength::Len32 => 14,
+    let rounds: u8 = match key.len() {
+        16 => 10,
+        24 => 12,
+        32 => 14,
+        _ => panic!("unexpected error with key length."),
     };
 
     //TODO: replace this with a randomly generated key
@@ -64,7 +65,6 @@ fn final_encryption_round(state: &mut Vec<u8>, round_key: &Vec<u8>) {
     sub_bytes(state);
     shift_rows(state);
     add_round_key(state, round_key);
-    println!("After final round, state is length {}", state.len());
 }
 
 fn sub_bytes(state: &mut Vec<u8>) {
