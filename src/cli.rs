@@ -1,6 +1,9 @@
 use super::AESConfig;
 use super::KeyLength;
-use dialoguer::{Input, InputValidator, Select};
+use dialoguer::{Input, Select};
+use rand;
+use rand::SeedableRng;
+use rand_utf8;
 use std::error::Error;
 
 pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
@@ -24,7 +27,6 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
     if encrypt == true {
         let base_string = Input::new()
             .with_prompt("What string do you want to encrypt?")
-            //.validate_with()
             .interact_text()
             .unwrap();
         let key_length = match Select::new()
@@ -53,22 +55,39 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
             1 => true,
             _ => false,
         };
-        let mut key = String::new();
+        let kl = key_length.clone();
         if use_own_key == true {
-            key = Input::new()
+            let provided_key = Input::new()
                 .with_prompt(format!("Enter your {} byte key.", key_length))
-                //.validate_with()
+                .validate_with(|s: &String| -> Result<(), String> {
+                    if s.len() != kl as usize {
+                        let msg = format!(
+                            "You gave a key made up of {} bytes. \
+                            It should be {} bytes.",
+                            s.len(),
+                            kl as usize
+                        );
+                        Err(msg)
+                    } else {
+                        Ok(())
+                    }
+                })
                 .interact_text()?;
-        } //else {
-          // key = key_generator(key_length);
-          // }
-
-        return Ok(AESConfig {
-            base_string,
-            key_length,
-            encrypt,
-            key,
-        });
+            return Ok(AESConfig {
+                base_string,
+                key_length,
+                encrypt,
+                key: provided_key,
+            });
+        } else {
+            let generated_key = key_generator(kl);
+            return Ok(AESConfig {
+                base_string,
+                key_length,
+                encrypt,
+                key: generated_key,
+            });
+        }
     } else {
         //decryption
         let base_string: String = Input::new()
@@ -92,4 +111,10 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
             key,
         });
     }
+}
+
+fn key_generator(key_length: KeyLength) -> String {
+    let len = key_length as usize;
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+    return rand_utf8::rand_utf8(&mut rng, len).to_string();
 }

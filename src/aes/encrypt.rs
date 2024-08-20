@@ -1,7 +1,6 @@
 use super::utils::add_round_key;
 use super::utils::create_round_key;
 use super::utils::glsmult;
-use super::utils::KeyLength;
 use super::utils::{self};
 pub fn encrypt(input: &String, key: &String) -> Vec<u8> {
     let input_vec: Vec<u8> = input.as_bytes().to_vec();
@@ -19,11 +18,7 @@ pub fn encrypt(input: &String, key: &String) -> Vec<u8> {
         _ => panic!("unexpected error with key length."),
     };
 
-    //TODO: replace this with a randomly generated key
-    let char_key: Vec<char> = vec![
-        'k', 'k', 'k', 'k', 'e', 'e', 'e', 'e', 'y', 'y', 'y', 'y', '.', '.', '.', '.',
-    ];
-    let byte_key: Vec<u8> = char_key.iter().map(|c| *c as u8).collect::<Vec<_>>();
+    let byte_key = key.as_bytes().to_vec();
 
     let expanded_key: Vec<u8> = utils::expand_key(&byte_key);
 

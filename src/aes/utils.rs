@@ -220,7 +220,8 @@ pub fn get_rcon_val(val: u8) -> u8 {
     return RCON[row][col] as u8;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
+#[repr(usize)]
 pub enum KeyLength {
     Len16 = 16,
     Len24 = 24,
@@ -249,39 +250,6 @@ pub struct AESConfig {
     pub key_length: KeyLength,
     pub encrypt: bool,
     pub key: String,
-}
-
-pub enum ExpandedKeyLength {
-    Len176 = 176,
-    Len208 = 208,
-    Len240 = 240,
-}
-
-pub enum BaseKey {
-    Bits128([u8; 16]),
-    Bits192([u8; 24]),
-    Bits256([u8; 32]),
-}
-
-pub enum ExpandedKey {
-    Bytes176([u8; 176]),
-    Bytes208([u8; 208]),
-    Bytes240([u8; 240]),
-}
-
-pub fn xor_chars(c1: char, c2: char) -> char {
-    //In Rust, characters cannot be directly xored
-    //This function works around that through a bunch of casts.
-
-    // Convert characters to u32
-    let c1_code = c1 as u32;
-    let c2_code = c2 as u32;
-
-    // Perform the XOR operation
-    let xor_result = c1_code ^ c2_code;
-
-    // Convert the result back to a char
-    std::char::from_u32(xor_result).unwrap_or('\u{FFFD}') // '\u{FFFD}' is the replacement character
 }
 
 pub fn glsmult(mut a: u8, mut b: u8) -> u8 {
