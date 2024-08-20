@@ -246,10 +246,9 @@ impl KeyLength {
 }
 
 pub struct AESConfig {
-    pub base_string: String,
-    pub key_length: KeyLength,
+    pub base_bytes: Vec<u8>,
     pub encrypt: bool,
-    pub key: String,
+    pub key: Vec<u8>,
 }
 
 pub fn glsmult(mut a: u8, mut b: u8) -> u8 {

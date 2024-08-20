@@ -1,10 +1,10 @@
 use super::AESConfig;
 use super::KeyLength;
 use dialoguer::{Input, Select};
-use rand;
-use rand::SeedableRng;
-use rand_utf8;
+use rand::Rng;
 use std::error::Error;
+use std::fs::File;
+use std::io::prelude::*;
 
 pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
     println!(
@@ -25,7 +25,7 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
     };
 
     if encrypt == true {
-        let base_string = Input::new()
+        let base_string: String = Input::new()
             .with_prompt("What string do you want to encrypt?")
             .interact_text()
             .unwrap();
@@ -74,47 +74,41 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
                 })
                 .interact_text()?;
             return Ok(AESConfig {
-                base_string,
-                key_length,
+                base_bytes: base_string.into_bytes(),
                 encrypt,
-                key: provided_key,
+                key: provided_key.into_bytes(),
             });
         } else {
             let generated_key = key_generator(kl);
             return Ok(AESConfig {
-                base_string,
-                key_length,
+                base_bytes: base_string.into_bytes(),
                 encrypt,
                 key: generated_key,
             });
         }
     } else {
         //decryption
-        let base_string: String = Input::new()
-            .with_prompt("Provide your encrypted string.")
-            //.validate_with()
-            .interact_text()?;
-        let key: String = Input::new()
-            .with_prompt("Provide the key you used during encryption.")
-            //.validate_with()
-            .interact_text()?;
-        let key_length = match key.len() {
-            16 => KeyLength::Len16,
-            24 => KeyLength::Len24,
-            32 => KeyLength::Len32,
-            _ => panic!("this should not happen"),
-        };
+        println!("Key is being read from mykey.txt...");
+        let mut key_file = File::open("mykey.txt")?;
+        let mut key: Vec<u8> = Vec::new();
+        key_file.read_to_end(&mut key)?;
+
+        println!("Encrypted message is being read from mymsg.txt...");
+        let mut msg_file = File::open("mymsg.txt")?;
+        let mut base_bytes = Vec::new();
+        msg_file.read_to_end(&mut base_bytes)?;
+
         return Ok(AESConfig {
-            base_string,
-            key_length,
+            base_bytes,
             encrypt,
             key,
         });
     }
 }
 
-fn key_generator(key_length: KeyLength) -> String {
+fn key_generator(key_length: KeyLength) -> Vec<u8> {
     let len = key_length as usize;
-    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
-    return rand_utf8::rand_utf8(&mut rng, len).to_string();
+    let mut key = vec![0u8; len];
+    rand::thread_rng().fill(&mut key[..]);
+    return key;
 }

@@ -2,15 +2,7 @@ use super::utils::add_round_key;
 use super::utils::create_round_key;
 use super::utils::glsmult;
 use super::utils::{self};
-pub fn encrypt(input: &String, key: &String) -> Vec<u8> {
-    let input_vec: Vec<u8> = input.as_bytes().to_vec();
-    let mut column_block: Vec<u8> = vec![0; 16];
-    for i in 0..4 {
-        for j in 0..4 {
-            column_block[i + (j * 4)] = input_vec[(i * 4) + j];
-        }
-    }
-
+pub fn encrypt(input_vec: &mut Vec<u8>, key: Vec<u8>) -> Vec<u8> {
     let rounds: u8 = match key.len() {
         16 => 10,
         24 => 12,
@@ -18,18 +10,31 @@ pub fn encrypt(input: &String, key: &String) -> Vec<u8> {
         _ => panic!("unexpected error with key length."),
     };
 
-    let byte_key = key.as_bytes().to_vec();
+    let expanded_key: Vec<u8> = utils::expand_key(&key);
 
-    let expanded_key: Vec<u8> = utils::expand_key(&byte_key);
-
-    column_block = encrypt_main(column_block, rounds, &expanded_key);
-    let mut enc_result: Vec<u8> = vec![0; 16];
-    for i in 0..4 {
-        for j in 0..4 {
-            enc_result[(i * 4) + j] = column_block[i + (j * 4)];
-        }
+    while input_vec.len() % 16 != 0 {
+        input_vec.push(0);
     }
-    return enc_result;
+    let num_blocks = input_vec.len() / 16;
+    let mut total_output: Vec<u8> = vec![];
+    for block_num in 0..num_blocks {
+        let start_pos = block_num * 16;
+        let mut column_block: Vec<u8> = vec![0; 16];
+        for i in 0..4 {
+            for j in 0..4 {
+                column_block[i + (j * 4)] = input_vec[start_pos + (i * 4) + j];
+            }
+        }
+        column_block = encrypt_main(column_block, rounds, &expanded_key);
+        let mut block_result: Vec<u8> = vec![0; 16];
+        for i in 0..4 {
+            for j in 0..4 {
+                block_result[(i * 4) + j] = column_block[i + (j * 4)];
+            }
+        }
+        total_output.extend(block_result);
+    }
+    return total_output;
 }
 
 fn encrypt_main(mut state: Vec<u8>, rounds: u8, expanded_key: &Vec<u8>) -> Vec<u8> {
