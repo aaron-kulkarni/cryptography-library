@@ -58,7 +58,7 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
         let kl = key_length.clone();
         if use_own_key == true {
             let provided_key = Input::new()
-                .with_prompt(format!("Enter your {} byte key.", key_length))
+                .with_prompt(format!("Enter your {} byte key", kl as usize))
                 .validate_with(|s: &String| -> Result<(), String> {
                     if s.len() != kl as usize {
                         let msg = format!(

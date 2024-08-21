@@ -12,9 +12,18 @@ pub fn encrypt(input_vec: &mut Vec<u8>, key: Vec<u8>) -> Vec<u8> {
 
     let expanded_key: Vec<u8> = utils::expand_key(&key);
 
-    while input_vec.len() % 16 != 0 {
-        input_vec.push(0);
+    ////padding////
+    //The padding scheme is explained in decrypt.rs:remove_padding()
+    let mut padding = 16 - (input_vec.len() % 16);
+    if padding == 16 {
+        padding = 0;
     }
+
+    for _ in 0..padding {
+        input_vec.push(padding as u8);
+    }
+    ////end-padding////
+
     let num_blocks = input_vec.len() / 16;
     let mut total_output: Vec<u8> = vec![];
     for block_num in 0..num_blocks {

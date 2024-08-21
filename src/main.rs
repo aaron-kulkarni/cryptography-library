@@ -10,7 +10,7 @@ fn main() {
     let config = match cli::init_aes_config() {
         Ok(x) => x,
         //TODO: exit gracefully
-        Err(e) => process::exit(8),
+        Err(_) => process::exit(8),
     };
 
     if config.encrypt {

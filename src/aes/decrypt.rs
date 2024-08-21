@@ -2,6 +2,7 @@ use super::utils::add_round_key;
 use super::utils::create_round_key;
 use super::utils::glsmult;
 use super::utils::{self};
+use std::process;
 
 pub fn decrypt(input_vec: Vec<u8>, key: Vec<u8>) -> String {
     let rounds: u8 = match key.len() {
@@ -35,7 +36,36 @@ pub fn decrypt(input_vec: Vec<u8>, key: Vec<u8>) -> String {
         }
         total_output.extend(block_result);
     }
+    remove_padding(&mut total_output);
     return String::from_utf8(total_output.clone()).unwrap();
+}
+
+fn remove_padding(text: &mut Vec<u8>) {
+    /* Padding scheme example:
+       User passes in a plaintext string which is 20 bytes.
+       We need to add 12 bytes so that the string length is divisible by 16.
+       We add 12 bytes of the byte representation of 12.
+       This way, it's clear to the decryption algorithm which bytes are padding
+       and which are not.
+    */
+
+    let last_byte: usize = match text.last() {
+        Some(a) => *a as usize,
+        None => {
+            println!("Decryption key seems to be invalid.");
+            process::exit(11)
+        }
+    };
+    //let last_byte = *text.last().ok_or("Failed to get last byte.")? as usize;
+
+    if text
+        .iter()
+        .rev()
+        .take(last_byte)
+        .all(|&byte| byte == last_byte as u8)
+    {
+        text.truncate(text.len() - last_byte);
+    }
 }
 
 fn decrypt_main(mut state: Vec<u8>, rounds: u8, expanded_key: &Vec<u8>) -> Vec<u8> {
