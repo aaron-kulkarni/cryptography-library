@@ -1,5 +1,10 @@
 use num::BigUint;
 use num_primes::Generator;
+use std::error::Error;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::{BufRead, BufReader};
+use std::num::ParseIntError;
 /*
 
 
@@ -31,8 +36,7 @@ RSA Cryptography
 
 */
 
-fn encrypt(msg: String) {
-    let mut vec = msg.into_bytes();
+pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut padding = 128 - (vec.len() % 128);
     if padding == 16 {
         padding = 0;
@@ -43,14 +47,32 @@ fn encrypt(msg: String) {
     }
 
     let num_blocks = vec.len() / 128;
+    let msg_file = File::open("rsapublickey.txt")?;
+    let reader = BufReader::new(msg_file);
+
+    let line = reader.lines().next().ok_or("Public key file is empty")??;
+    let mut nums = line.split_whitespace();
+
+    let n = nums.next().ok_or("Missing first number")?.parse::<u64>()?;
+    let e = nums.next().ok_or("Missing second number")?.parse::<u64>()?;
+
+    if nums.next().is_some() {
+        return Err("Too many numbers in this line".into());
+    }
+
     for i in 0..num_blocks {
         let start = 128 * i;
-        encrypt_block(&mut vec, n, e);
+        encrypt_block(&mut vec, n, e, start);
     }
+
+    let mut result_file = File::create("myrsamsg.txt")?;
+    result_file.write_all(&vec);
+
+    return Ok(());
 }
 
-fn encrypt_block(vec: &mut Vec<u8>, n: u64, e: u64) {
-    for i in 0..vec.len() {
+fn encrypt_block(vec: &mut Vec<u8>, n: u64, e: u64, start: usize) {
+    for i in start..start + 128 {
         let elem = &mut vec[i];
 
         for _ in 0..n {
