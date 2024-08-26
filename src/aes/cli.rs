@@ -89,15 +89,30 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
         }
     } else {
         //decryption
-        println!("Key is being read from mykey.txt...");
-        let mut key_file = File::open("mykey.txt")?;
+        println!("Key is being read from myaeskey.txt...");
+        let mut key_file = File::open("myaeskey.txt")?;
         let mut key: Vec<u8> = Vec::new();
-        key_file.read_to_end(&mut key)?;
+        match key_file.read_to_end(&mut key) {
+            Ok(_) => {}
+            Err(_) => {
+                println!(
+                    "myaeskey.txt does not exist. Are you sure you encrypted your files using AES?"
+                )
+            }
+        }
 
         println!("Encrypted message is being read from mymsg.txt...");
         let mut msg_file = File::open("mymsg.txt")?;
         let mut base_bytes = Vec::new();
-        msg_file.read_to_end(&mut base_bytes)?;
+
+        match msg_file.read_to_end(&mut base_bytes) {
+            Ok(_) => {}
+            Err(_) => {
+                println!(
+                    "mymsg.txt does not exist. Are you sure you encrypted your files using AES?"
+                )
+            }
+        }
 
         return Ok(AESConfig {
             base_bytes,
@@ -121,16 +136,16 @@ pub fn run_aes(config: AESConfig) {
         let mut text_clone = config.base_bytes.clone();
         let encrypted_bytes = super::encrypt::encrypt(&mut text_clone, config.key);
 
-        let mut file = match File::create("mykey.txt") {
+        let mut file = match File::create("myaeskey.txt") {
             Ok(f) => f,
             Err(_) => {
-                println!("Could not create mykey.txt.");
+                println!("Could not create myaeskey.txt.");
                 process::exit(3);
             }
         };
 
         if let Err(_) = file.write_all(&key_clone) {
-            println!("Failed to write to file mykey.txt.");
+            println!("Failed to write to file myaeskey.txt.");
             process::exit(4);
         }
 

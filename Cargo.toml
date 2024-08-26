@@ -6,6 +6,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.16", features = ["derive"] }
 dialoguer = "0.11.0"
+num = "0.4.3"
+num-primes = "0.3.0"
+num-traits = "0.2.19"
 rand = "0.8.5"
 rand-utf8 = "0.0.1"
 randomizer = "0.1.2"

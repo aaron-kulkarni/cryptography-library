@@ -13,7 +13,7 @@ pub fn encrypt(input_vec: &mut Vec<u8>, key: Vec<u8>) -> Vec<u8> {
     let expanded_key: Vec<u8> = utils::expand_key(&key);
 
     ////padding////
-    //The padding scheme is explained in decrypt.rs:remove_padding()
+    //The padding scheme is explained in aes/decrypt.rs:remove_padding()
     let mut padding = 16 - (input_vec.len() % 16);
     if padding == 16 {
         padding = 0;

@@ -1,4 +1,5 @@
 mod aes;
+mod rsa;
 use aes::utils::KeyLength;
 mod cli;
 use dialoguer::Select;
@@ -18,7 +19,10 @@ fn main() {
             let config = match aes::cli::init_aes_config() {
                 Ok(x) => x,
                 //TODO: exit gracefully
-                Err(_) => return,
+                Err(e) => {
+                    println!("{}", e);
+                    return;
+                }
             };
             aes::cli::run_aes(config);
         }
