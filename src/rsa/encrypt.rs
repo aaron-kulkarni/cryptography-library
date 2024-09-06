@@ -1,10 +1,11 @@
-use num::BigUint;
+use num_bigint::BigUint;
 use num_primes::Generator;
+use num_traits::CheckedMul;
+use num_traits::ToPrimitive;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
-use std::num::ParseIntError;
 /*
 
 
@@ -38,7 +39,7 @@ RSA Cryptography
 
 pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut padding = 128 - (vec.len() % 128);
-    if padding == 16 {
+    if padding == 128 {
         padding = 0;
     }
 
@@ -47,37 +48,70 @@ pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
     }
 
     let num_blocks = vec.len() / 128;
-    let msg_file = File::open("rsapublickey.txt")?;
+    let msg_file = File::open("rsapublic.txt")?;
     let reader = BufReader::new(msg_file);
 
-    let line = reader.lines().next().ok_or("Public key file is empty")??;
-    let mut nums = line.split_whitespace();
+    let mut lines = reader.lines();
+    let n = lines
+        .next()
+        .ok_or("Error with first line")??
+        .parse::<BigUint>()?;
 
-    let n = nums.next().ok_or("Missing first number")?.parse::<u64>()?;
-    let e = nums.next().ok_or("Missing second number")?.parse::<u64>()?;
+    let e = lines
+        .next()
+        .ok_or("Error with second line")??
+        .parse::<usize>()?;
 
-    if nums.next().is_some() {
-        return Err("Too many numbers in this line".into());
-    }
+    let mut result: Vec<u8> = Vec::new();
 
     for i in 0..num_blocks {
         let start = 128 * i;
-        encrypt_block(&mut vec, n, e, start);
+        result.append(&mut encrypt_block(vec, &n, e, start));
     }
 
     let mut result_file = File::create("myrsamsg.txt")?;
-    result_file.write_all(&vec);
+    result_file.write_all(&result)?;
 
     return Ok(());
 }
 
-fn encrypt_block(vec: &mut Vec<u8>, n: u64, e: u64, start: usize) {
-    for i in start..start + 128 {
-        let elem = &mut vec[i];
-
-        for _ in 0..n {
-            let temp: u64 = (*elem as u64) * n;
-            *elem = (temp % e) as u8;
-        }
-    }
+fn encrypt_block(vec: &mut Vec<u8>, n: &BigUint, e: usize, start: usize) -> Vec<u8> {
+    let e_big = BigUint::from(e);
+    let v_big = BigUint::from_bytes_be(&vec[start..start + 128]);
+    return v_big.modpow(&e_big, n).to_bytes_be();
 }
+
+// for i in start..start + 128 {
+//     let elem = &mut vec[i];
+
+//     let n_usize = match nclone.to_usize() {
+//         Some(value) => value,
+//         None => {
+//             println!("Couldn't convert BigUint to usize.");
+//             return;
+//         }
+//     };
+
+//     let nbiguint = BigUint::from(n);
+
+//     for _ in 0..n_usize {
+//         let temp = BigUint::from(*elem) * nbiguint;
+//         // Convert `temp % e` to a primitive integer before casting to `u8`
+//         let remainder = (temp % BigUint::from(e)).to_u8().unwrap_or(0);
+//         *elem = remainder;
+//     }
+// }
+//
+
+// for i in start..start + 128 {
+//     let elem = &mut vec[i];
+//     for _ in 0..e {
+//         let temp = BigUint::from(*elem) * n;
+//         let remainder = temp
+//             .modpow(&BigUint::from(1u32), &BigUint::from(e))
+//             .to_u8()
+//             .unwrap_or(0);
+//         *elem = remainder;
+//     }
+// }
+//

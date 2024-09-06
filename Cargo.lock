@@ -156,6 +156,7 @@ dependencies = [
  "clap",
  "dialoguer",
  "num",
+ "num-bigint 0.4.6",
  "num-primes",
  "num-traits",
  "rand 0.8.5",

@@ -52,14 +52,14 @@ pub fn init_rsa_config() -> Result<RSAConfig, Box<dyn Error>> {
         });
     } else {
         //decryption
-        println!("Key is being read from myrsakey.txt...");
-        let mut key_file = File::open("myrsakey.txt")?;
+        println!("Key is being read from myrsamsg.txt...");
+        let mut key_file = File::open("myrsamsg.txt")?;
         let mut key: Vec<u8> = Vec::new();
         match key_file.read_to_end(&mut key) {
             Ok(_) => {}
             Err(_) => {
                 println!(
-                    "myrsakey.txt does not exist. Are you sure you encrypted your files using RSA?"
+                    "myrsamsg.txt does not exist. Are you sure you encrypted your files using RSA?"
                 )
             }
         }
@@ -117,11 +117,20 @@ pub fn run_rsa(config: RSAConfig) {
         return;
     } else {
         println!("Decrypting...");
+        let mut msg_clone = config.message.clone();
 
-        let decrypted_string = super::decrypt::decrypt(config.message, config.key);
-        println!("This is the decrypted string: {:?}", decrypted_string);
+        match super::decrypt::decrypt(&mut msg_clone) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Received an error while trying to decrypt: {}", e);
+                process::exit(85);
+            }
+        }
+        println!(
+            "This is the decrypted string: {:?}",
+            String::from_utf8(msg_clone)
+        );
+
         return;
     }
 }
-
-fn setup_rsa() {}

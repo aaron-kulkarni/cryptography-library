@@ -1,5 +1,3 @@
-pub const E: u16 = 65537;
-
 pub struct RSAConfig {
     pub encrypt: bool,
     pub generate: bool,

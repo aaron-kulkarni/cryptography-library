@@ -26,10 +26,17 @@ fn main() {
             };
             aes::cli::run_aes(config);
         }
-        Algorithm::SHA => {
-            println!("Not implemented yet!")
-        }
         Algorithm::RSA => {
+            let config = match rsa::cli::init_rsa_config() {
+                Ok(x) => x,
+                Err(e) => {
+                    println!("{}", e);
+                    return;
+                }
+            };
+            rsa::cli::run_rsa(config);
+        }
+        Algorithm::SHA => {
             println!("Not implemented yet!")
         }
     }
@@ -42,14 +49,14 @@ fn init_algo_config() -> Algorithm {
         .with_prompt("Do you want to encrypt or decrypt a message?")
         .default(0)
         .item("AES")
-        .item("SHA")
         .item("RSA")
+        .item("SHA")
         .interact()
         .unwrap()
     {
         0 => Algorithm::AES,
-        1 => Algorithm::SHA,
-        2 => Algorithm::RSA,
+        1 => Algorithm::RSA,
+        2 => Algorithm::SHA,
         _ => panic!("I don't think this is possible"),
     };
 
