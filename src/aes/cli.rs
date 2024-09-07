@@ -89,27 +89,27 @@ pub fn init_aes_config() -> Result<AESConfig, Box<dyn Error>> {
         }
     } else {
         //decryption
-        println!("Key is being read from myaeskey.txt...");
-        let mut key_file = File::open("myaeskey.txt")?;
+        println!("Key is being read from aeskey.txt...");
+        let mut key_file = File::open("aeskey.txt")?;
         let mut key: Vec<u8> = Vec::new();
         match key_file.read_to_end(&mut key) {
             Ok(_) => {}
             Err(_) => {
                 println!(
-                    "myaeskey.txt does not exist. Are you sure you encrypted your files using AES?"
+                    "aeskey.txt does not exist. Are you sure you encrypted your files using AES?"
                 )
             }
         }
 
-        println!("Encrypted message is being read from mymsg.txt...");
-        let mut msg_file = File::open("mymsg.txt")?;
+        println!("Encrypted message is being read from aesmsg.txt...");
+        let mut msg_file = File::open("aesmsg.txt")?;
         let mut base_bytes = Vec::new();
 
         match msg_file.read_to_end(&mut base_bytes) {
             Ok(_) => {}
             Err(_) => {
                 println!(
-                    "mymsg.txt does not exist. Are you sure you encrypted your files using AES?"
+                    "aesmsg.txt does not exist. Are you sure you encrypted your files using AES?"
                 )
             }
         }
@@ -136,35 +136,35 @@ pub fn run_aes(config: AESConfig) {
         let mut text_clone = config.base_bytes.clone();
         let encrypted_bytes = super::encrypt::encrypt(&mut text_clone, config.key);
 
-        let mut file = match File::create("myaeskey.txt") {
+        let mut file = match File::create("aeskey.txt") {
             Ok(f) => f,
             Err(_) => {
-                println!("Could not create myaeskey.txt.");
+                println!("Could not create aeskey.txt.");
                 process::exit(3);
             }
         };
 
         if let Err(_) = file.write_all(&key_clone) {
-            println!("Failed to write to file myaeskey.txt.");
+            println!("Failed to write to file aeskey.txt.");
             process::exit(4);
         }
 
-        let mut file2 = match File::create("mymsg.txt") {
+        let mut file2 = match File::create("aesmsg.txt") {
             Ok(f) => f,
             Err(_) => {
-                println!("Could not create mymsg.txt");
+                println!("Could not create aesmsg.txt");
                 process::exit(5);
             }
         };
 
         if let Err(_) = file2.write_all(&encrypted_bytes) {
-            println!("Failed to write to mymsg.txt.");
+            println!("Failed to write to aesmsg.txt.");
             process::exit(6);
         }
 
         println!(
-            "The key for this encryption has been saved in my_key.txt.
-            The encrypted message has been saved in my_msg.txt.
+            "The key for this encryption has been saved in aeskey.txt.
+            The encrypted message has been saved in aesmsg.txt.
             Doing another encryption operation will overwrite both these files."
         );
 

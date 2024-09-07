@@ -5,6 +5,7 @@ use num_traits::ToPrimitive;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
 /*
 
@@ -47,7 +48,6 @@ pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
         vec.push(padding as u8);
     }
 
-    let num_blocks = vec.len() / 128;
     let msg_file = File::open("rsapublic.txt")?;
     let reader = BufReader::new(msg_file);
 
@@ -60,25 +60,22 @@ pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
     let e = lines
         .next()
         .ok_or("Error with second line")??
-        .parse::<usize>()?;
+        .parse::<BigUint>()?;
 
-    let mut result: Vec<u8> = Vec::new();
+    let text = BigUint::from_bytes_be(&vec);
+    let result = text.modpow(&e, &n);
 
-    for i in 0..num_blocks {
-        let start = 128 * i;
-        result.append(&mut encrypt_block(vec, &n, e, start));
-    }
-
-    let mut result_file = File::create("myrsamsg.txt")?;
-    result_file.write_all(&result)?;
+    let result_file = File::create("rsamsg.txt")?;
+    let mut result_writer = BufWriter::new(result_file);
+    writeln!(result_writer, "{}", result)?;
 
     return Ok(());
 }
 
-fn encrypt_block(vec: &mut Vec<u8>, n: &BigUint, e: usize, start: usize) -> Vec<u8> {
+fn encrypt_block(vec: &mut Vec<u8>, n: &BigUint, e: usize, start: usize) -> BigUint {
     let e_big = BigUint::from(e);
     let v_big = BigUint::from_bytes_be(&vec[start..start + 128]);
-    return v_big.modpow(&e_big, n).to_bytes_be();
+    return v_big.modpow(&e_big, n);
 }
 
 // for i in start..start + 128 {

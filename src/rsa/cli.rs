@@ -43,6 +43,18 @@ pub fn init_rsa_config() -> Result<RSAConfig, Box<dyn Error>> {
 
         let message: String = Input::new()
             .with_prompt("What string do you want to encrypt?")
+            .validate_with(|s: &String| -> Result<(), String> {
+                if s.len() > 128 {
+                    let msg = format!(
+                        "Your string was {} bytes. \
+                        Please limit string length to 128 bytes.",
+                        s.len()
+                    );
+                    Err(msg)
+                } else {
+                    Ok(())
+                }
+            })
             .interact_text()
             .unwrap();
         return Ok(RSAConfig {
@@ -52,30 +64,8 @@ pub fn init_rsa_config() -> Result<RSAConfig, Box<dyn Error>> {
         });
     } else {
         //decryption
-        println!("Key is being read from myrsamsg.txt...");
-        let mut key_file = File::open("myrsamsg.txt")?;
-        let mut key: Vec<u8> = Vec::new();
-        match key_file.read_to_end(&mut key) {
-            Ok(_) => {}
-            Err(_) => {
-                println!(
-                    "myrsamsg.txt does not exist. Are you sure you encrypted your files using RSA?"
-                )
-            }
-        }
-
-        println!("Encrypted message is being read from myrsamsg.txt...");
-        let mut msg_file = File::open("myrsamsg.txt")?;
-        let mut message = Vec::new();
-
-        match msg_file.read_to_end(&mut message) {
-            Ok(_) => {}
-            Err(_) => {
-                println!(
-                    "myrsamsg.txt does not exist. Are you sure you encrypted your files using RSA?"
-                )
-            }
-        }
+        //dummy value for message, will read actual value later in decrypt function.
+        let message: Vec<u8> = Vec::new();
 
         return Ok(RSAConfig {
             encrypt,
@@ -110,26 +100,25 @@ pub fn run_rsa(config: RSAConfig) {
         println!(
             "The public key for this encryption has been saved in rsapublic.txt.
             The private key for this encryption has been saved in rsaprivate.txt.
-            The encrypted message has been saved in my_rsa_msg.txt.
+            The encrypted message has been saved in rsamsg.txt.
             Doing another encryption operation will overwrite all of these files."
         );
 
         return;
     } else {
         println!("Decrypting...");
-        let mut msg_clone = config.message.clone();
 
-        match super::decrypt::decrypt(&mut msg_clone) {
+        match super::decrypt::decrypt() {
             Ok(_) => {}
             Err(e) => {
                 println!("Received an error while trying to decrypt: {}", e);
                 process::exit(85);
             }
         }
-        println!(
-            "This is the decrypted string: {:?}",
-            String::from_utf8(msg_clone)
-        );
+        // println!(
+        //     "This is the decrypted string: {:?}",
+        //     String::from_utf8(msg_clone)
+        // );
 
         return;
     }
