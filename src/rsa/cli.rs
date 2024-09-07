@@ -106,7 +106,7 @@ pub fn run_rsa(config: RSAConfig) {
             Ok(_) => {}
             Err(e) => {
                 println!("Received an error while trying to decrypt: {}", e);
-                process::exit(1);
+                process::exit(85);
             }
         }
         return;

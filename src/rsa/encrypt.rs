@@ -1,7 +1,4 @@
 use num_bigint::BigUint;
-use num_primes::Generator;
-use num_traits::CheckedMul;
-use num_traits::ToPrimitive;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;

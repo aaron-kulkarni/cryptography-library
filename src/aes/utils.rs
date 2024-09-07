@@ -234,17 +234,6 @@ impl fmt::Display for KeyLength {
     }
 }
 
-impl KeyLength {
-    pub fn from_u8(value: u8) -> Option<KeyLength> {
-        match value {
-            16 => Some(KeyLength::Len16),
-            24 => Some(KeyLength::Len24),
-            32 => Some(KeyLength::Len32),
-            _ => None, // Handle invalid values
-        }
-    }
-}
-
 pub struct AESConfig {
     pub base_bytes: Vec<u8>,
     pub encrypt: bool,
