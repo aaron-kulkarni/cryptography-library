@@ -1,6 +1,6 @@
 # RUST CRYPTOGRAPHY LIBRARY
 
-These are very basic implementations of various cryptographic algorithms. So far, only AES is implemented.
+These are very basic implementations of the AES and RSA cryptographic algorithms.
 
 I wrote this code primarily as a way to become familar with Rust basics and syntax. It should not be used for actual cryptography.
 
@@ -16,10 +16,3 @@ cd cryptography-library
 ```
 cargo run
 ```
-
-
-### In Progress:
-* RSA
-
-### Coming Soon:
-* SHA-256
