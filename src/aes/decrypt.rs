@@ -53,7 +53,7 @@ fn remove_padding(text: &mut Vec<u8>) {
         Some(a) => *a as usize,
         None => {
             println!("Decryption key seems to be invalid.");
-            process::exit(11)
+            process::exit(1)
         }
     };
     //let last_byte = *text.last().ok_or("Failed to get last byte.")? as usize;

@@ -140,26 +140,26 @@ pub fn run_aes(config: AESConfig) {
             Ok(f) => f,
             Err(_) => {
                 println!("Could not create aeskey.txt.");
-                process::exit(3);
+                process::exit(1);
             }
         };
 
         if let Err(_) = file.write_all(&key_clone) {
             println!("Failed to write to file aeskey.txt.");
-            process::exit(4);
+            process::exit(1);
         }
 
         let mut file2 = match File::create("aesmsg.txt") {
             Ok(f) => f,
             Err(_) => {
                 println!("Could not create aesmsg.txt");
-                process::exit(5);
+                process::exit(1);
             }
         };
 
         if let Err(_) = file2.write_all(&encrypted_bytes) {
             println!("Failed to write to aesmsg.txt.");
-            process::exit(6);
+            process::exit(1);
         }
 
         println!(

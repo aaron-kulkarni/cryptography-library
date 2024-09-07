@@ -7,36 +7,6 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
-/*
-
-
-RSA Cryptography
-
-    Request two prime numbers from the user and verify them.
-    Put the prime numbers in different variables.
-    Determine n = pq.
-    Calculate (n) = (p - 1)(q - 1)after the above step.
-    Select a random number e that is close to being prime to both n and 1 e n.
-    Determine d = e-1 mod n.
-    Print out the private and public keys.
-    Request a message from the user and then save it in a variable.
-    Use the public key to encrypt the message.
-    Using the private key, decrypt the message.
-    Print the message, both encrypted and decrypted.
-
-
-    p = large prime
-    q = large prime
-    n = p x q
-    r = (p-1)(q-1)
-    e = 3, 5, 17, 65537
-    d = e-1 * mod(r)
-
-    encrypt: m^e mod(n)
-
-    decrypt: c^d mod(n)
-
-*/
 
 pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
     let mut padding = 128 - (vec.len() % 128);
@@ -71,44 +41,3 @@ pub fn encrypt(vec: &mut Vec<u8>) -> Result<(), Box<dyn Error>> {
 
     return Ok(());
 }
-
-fn encrypt_block(vec: &mut Vec<u8>, n: &BigUint, e: usize, start: usize) -> BigUint {
-    let e_big = BigUint::from(e);
-    let v_big = BigUint::from_bytes_be(&vec[start..start + 128]);
-    return v_big.modpow(&e_big, n);
-}
-
-// for i in start..start + 128 {
-//     let elem = &mut vec[i];
-
-//     let n_usize = match nclone.to_usize() {
-//         Some(value) => value,
-//         None => {
-//             println!("Couldn't convert BigUint to usize.");
-//             return;
-//         }
-//     };
-
-//     let nbiguint = BigUint::from(n);
-
-//     for _ in 0..n_usize {
-//         let temp = BigUint::from(*elem) * nbiguint;
-//         // Convert `temp % e` to a primitive integer before casting to `u8`
-//         let remainder = (temp % BigUint::from(e)).to_u8().unwrap_or(0);
-//         *elem = remainder;
-//     }
-// }
-//
-
-// for i in start..start + 128 {
-//     let elem = &mut vec[i];
-//     for _ in 0..e {
-//         let temp = BigUint::from(*elem) * n;
-//         let remainder = temp
-//             .modpow(&BigUint::from(1u32), &BigUint::from(e))
-//             .to_u8()
-//             .unwrap_or(0);
-//         *elem = remainder;
-//     }
-// }
-//

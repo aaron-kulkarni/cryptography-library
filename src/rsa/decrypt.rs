@@ -1,8 +1,8 @@
 use num_bigint::BigUint;
 use std::error::Error;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
+use std::process;
 
 pub fn decrypt() -> Result<(), Box<dyn Error>> {
     let msg_file = File::open("rsamsg.txt")?;
@@ -27,16 +27,39 @@ pub fn decrypt() -> Result<(), Box<dyn Error>> {
         .ok_or("Missing second number")??
         .parse::<BigUint>()?;
 
-    let result = cipher.modpow(&d, &n).to_bytes_be();
+    let mut result = cipher.modpow(&d, &n).to_bytes_be();
 
-    let mut result_file = File::create("decryptedstuff.txt")?;
-    result_file.write_all(&result)?;
-
+    remove_padding(&mut result);
+    println!(
+        "{}",
+        String::from_utf8(result).unwrap_or(String::from("Error printing decrypted string"))
+    );
     return Ok(());
 }
 
-fn decrypt_block(vec: &mut Vec<u8>, n: &BigUint, d: usize, start: usize) -> Vec<u8> {
-    let d_big = BigUint::from(d);
-    let v_big = BigUint::from_bytes_be(&vec[start..start + 128]);
-    return v_big.modpow(&d_big, n).to_bytes_be();
+fn remove_padding(text: &mut Vec<u8>) {
+    /* Padding scheme example:
+       User passes in a plaintext string which is 20 bytes.
+       We need to add 12 bytes so that the string length is divisible by 16.
+       We add 12 bytes of the byte representation of 12.
+       This way, it's clear to the decryption algorithm which bytes are padding
+       and which are not.
+    */
+
+    let last_byte: usize = match text.last() {
+        Some(a) => *a as usize,
+        None => {
+            println!("Decryption key seems to be invalid.");
+            process::exit(1)
+        }
+    };
+
+    if text
+        .iter()
+        .rev()
+        .take(last_byte)
+        .all(|&byte| byte == last_byte as u8)
+    {
+        text.truncate(text.len() - last_byte);
+    }
 }

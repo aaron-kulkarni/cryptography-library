@@ -1,12 +1,6 @@
 use super::utils::RSAConfig;
-use crate::KeyLength;
 use dialoguer::{Input, Select};
-use num::BigUint;
-use num_primes::Generator;
-use rand::Rng;
 use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
 use std::process;
 
 pub fn init_rsa_config() -> Result<RSAConfig, Box<dyn Error>> {
@@ -83,7 +77,7 @@ pub fn run_rsa(config: RSAConfig) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("{}", e);
-                    process::exit(10);
+                    process::exit(1);
                 }
             }
         }
@@ -93,7 +87,7 @@ pub fn run_rsa(config: RSAConfig) {
             Ok(_) => {}
             Err(e) => {
                 println!("{}", e);
-                process::exit(90);
+                process::exit(1);
             }
         }
 
@@ -112,14 +106,9 @@ pub fn run_rsa(config: RSAConfig) {
             Ok(_) => {}
             Err(e) => {
                 println!("Received an error while trying to decrypt: {}", e);
-                process::exit(85);
+                process::exit(1);
             }
         }
-        // println!(
-        //     "This is the decrypted string: {:?}",
-        //     String::from_utf8(msg_clone)
-        // );
-
         return;
     }
 }

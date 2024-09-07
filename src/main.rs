@@ -1,13 +1,11 @@
 mod aes;
 mod rsa;
 use aes::utils::KeyLength;
-mod cli;
 use dialoguer::Select;
 
 #[derive(Debug)]
 enum Algorithm {
     AES,
-    SHA,
     RSA,
 }
 
@@ -18,7 +16,6 @@ fn main() {
         Algorithm::AES => {
             let config = match aes::cli::init_aes_config() {
                 Ok(x) => x,
-                //TODO: exit gracefully
                 Err(e) => {
                     println!("{}", e);
                     return;
@@ -36,9 +33,6 @@ fn main() {
             };
             rsa::cli::run_rsa(config);
         }
-        Algorithm::SHA => {
-            println!("Not implemented yet!")
-        }
     }
 }
 
@@ -50,13 +44,11 @@ fn init_algo_config() -> Algorithm {
         .default(0)
         .item("AES")
         .item("RSA")
-        .item("SHA")
         .interact()
         .unwrap()
     {
         0 => Algorithm::AES,
         1 => Algorithm::RSA,
-        2 => Algorithm::SHA,
         _ => panic!("I don't think this is possible"),
     };
 
