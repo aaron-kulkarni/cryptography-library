@@ -1,4 +1,4 @@
-# RUST CRYPTOGRAPHY LIBRARY
+# Rust Cryptography Library
 
 These are very basic implementations of the AES and RSA cryptographic algorithms.
 
